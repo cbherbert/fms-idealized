@@ -1,10 +1,20 @@
 #!/bin/csh -f  
-#BSUB -n 16  
-#BSUB -W 02:00
-#BSUB -J fms_default
-#BSUB -o out_err/out.%J
-#BSUB -e out_err/err.%J
-#BSUB -L /bin/csh 
+### SGE variables:
+## job shell:
+#$ -S /bin/csh 
+## job name:
+#$ -N fms_default
+## queue:
+#$ -q E5-2670_test 
+## parallel environment & cpu nb:
+#$ -pe test_debian 16
+## SGE user environment:
+#$ -cwd
+## Error/output files:
+#$ -o $JOB_NAME-$JOB_ID.out
+#$ -e $JOB_NAME-$JOB_ID.err
+## Export environment variables:
+#$ -V
 
 # === Default test run script for idealized GCM ===
 
@@ -17,9 +27,10 @@
 # Robb Wills, Ori Adam, May 2014
 # Corentin Herbert, May 2016
 
+set HOSTFILE = "${TMPDIR}/machines"
 # change the working directory (default is home directory)                       
-#cd $LS_SUBCWD
-echo Working directory is $cwd    
+cd ${SGE_O_WORKDIR}
+echo "Working directory is $cwd"
  
 
 set model_type     = dry                          # if "moist", the moist model is run and if "dry, it is the dry. "moist_hydro" is for the bucket hydrology model. The namelists for the parameters are below (L212). 
@@ -41,7 +52,7 @@ else
    set work_dir     = $fms_home:h
 endif
 
-echo $fms_home 
+echo "$fms_home"
  
 set days            = 1                             # length of integration 
 set runs_per_script = 1                              # number of runs within this script
@@ -50,7 +61,7 @@ set num_script_runs = 1                              # how many times to resubmi
 set days_per_segment = ${days}                       # days per segment of analysis (for seasonally-varying analysis)
 
 @ num_segments       = ${days} / ${days_per_segment} # number of analysis segments
-echo num_segments    = $num_segments
+echo "num_segments    = $num_segments"
 
 # find data directory location, 
 
@@ -62,10 +73,10 @@ echo "*** Running ${run_script} on `hostname` ***"
 date
 
 # Tell me which nodes it is run on; for sending messages to help-hpc           
-echo " "
-echo This jobs runs on the following processors: 
+#echo " "
+#echo This jobs runs on the following processors: 
 #echo $LSB_HOSTS
-echo " "
+#echo " "
 #----------------------------------------------------------------------
 
 # zonally averaged analysis 
@@ -97,9 +108,8 @@ endif
 
 echo "MPI Used:" `which mpirun`
 
-set NPROCS=1
 #set NPROCS=`echo $LSB_HOSTS| wc -w`
-echo "This job has allocated $NPROCS cpus"
+echo "This job has allocated $NSLOTS cpus"
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -402,7 +412,7 @@ EOF
   
     # run the model with mpirun
     set MX_RCACHE=2
-    mpirun -np $NPROCS ${workdir}/fms.x
+    mpirun -v -mca btl sm,openib,self -hostfile ${HOSTFILE} -np ${NSLOTS} ${workdir}/fms.x
     
     #--------------------------------------------------------------------------------------------------------
 
@@ -524,8 +534,7 @@ EOF
          cp $analysis_dir/$analysis_script ./
 
         # ssh to head node and submit analysis script
-#         bsub < $analysis_script
-#	csh -f ./$analysis_script
+#         qsub $analysis_script
     else
 	rm -rf $output_dir/combine/$date_name
     endif
@@ -540,17 +549,17 @@ EOF
 
 end # --- loop over $irun ended ---
 
-# rm -rf $workdir
+rm -rf $workdir
 
-# cd $exp_home/run
+cd $exp_home/run
 
-# if ($ireload > $num_script_runs) then
-#   echo "Note: not resubmitting job."
-# else
-#   echo "Submitting run $ireload."
-#   bsub < $run_script
-# endif
+if ($ireload > $num_script_runs) then
+  echo "Note: not resubmitting job."
+else
+  echo "Submitting run $ireload."
+  qsub $run_script
+endif
 
-# date
+date
  
  
