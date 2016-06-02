@@ -1,4 +1,4 @@
-#!/bin/csh -f  
+#!/bin/csh -f
 ### SGE variables:
 ## job shell:
 #$ -S /bin/csh 
@@ -33,23 +33,23 @@ cd ${SGE_O_WORKDIR}
 echo "Working directory is $cwd"
  
 
-set model_type     = dry                          # if "moist", the moist model is run and if "dry, it is the dry. "moist_hydro" is for the bucket hydrology model. The namelists for the parameters are below (L212). 
+set model_type     = moist                          # if "moist", the moist model is run and if "dry, it is the dry. "moist_hydro" is for the bucket hydrology model. The namelists for the parameters are below (L212). 
 set machine        = psmn                          # machine = euler or brutus, use the alternate runscripts for fram, or change mkmf templates, submission commands, and modules for other machines
 set analysis_type  = 2d                             # choose type of analysis: 2d (zonally averaged) or 3d (zonally varying) outputs
-set run_name       = default_test_dry_2d          # label for run; output dir and working dir are run_name specific
-set run_script     = $cwd/run_test_psmn.sh                  # path/name of this run script (for resubmit) 
+set run_name       = "default_test_${model_type}_2d"          # label for run; output dir and working dir are run_name specific
+set run_script     = "$cwd/run_test_psmn.sh"                  # path/name of this run script (for resubmit) 
 
-set exp_home       = $cwd:h                         # directory containing run/$run_script and input/ 
-set exp_name       = $exp_home:t                    # name of experiment (i.e., name of this model build) 
-set fms_home       = $cwd:h:h:h/idealized           # directory containing model source code, etc, usually /home/$USER/fms/idealized
-set home_dir       = $home
+set exp_home       = "$cwd:h"                         # directory containing run/$run_script and input/ 
+set exp_name       = "$exp_home:t"                    # name of experiment (i.e., name of this model build) 
+set fms_home       = "$cwd:h:h:h/idealized"           # directory containing model source code, etc, usually /home/$USER/fms/idealized
+set home_dir       = "$home"
 # SET UP PERSONAL DIRECTORY ON SCRATCH DISC
 if (${machine} == euler) then                            # assignment of temp directory to scratch space
-   set work_dir     = /cluster/work/beta2/clidyn/        # (EULER) please change clidyn to a folder name of your choice (beta1-4 available)
+   set work_dir     = "/cluster/work/beta2/clidyn/"        # (EULER) please change clidyn to a folder name of your choice (beta1-4 available)
 else if (${machine} == brutus) then
-   set work_dir     = /cluster/scratch_xp/public/clidyn/ # (BRUTUS) please change clidyn to a folder name of your choice
+   set work_dir     = "/cluster/scratch_xp/public/clidyn/" # (BRUTUS) please change clidyn to a folder name of your choice
 else
-   set work_dir     = $fms_home:h
+   set work_dir     = "$fms_home:h"
 endif
 
 echo "$fms_home"
@@ -531,12 +531,13 @@ EOF
 	   echo "set final = 0" >> post_processing_info
 	endif
     
-         cp $analysis_dir/$analysis_script ./
+         cp "$analysis_dir/$analysis_script" ./
 
         # ssh to head node and submit analysis script
-#         qsub $analysis_script
+	echo "*** Submitting analyis script"
+	ssh psmnsb "source ~/.profile; qsub ${postproc_dir}/${analysis_script}"
     else
-	rm -rf $output_dir/combine/$date_name
+	rm -rf "${output_dir}/combine/${date_name}"
     endif
 
     # don't resubmit if model failed to build a restart file
@@ -557,7 +558,7 @@ if ($ireload > $num_script_runs) then
   echo "Note: not resubmitting job."
 else
   echo "Submitting run $ireload."
-  qsub $run_script
+  ssh psmnsb "source ~/.profile; qsub $run_script"
 endif
 
 date
