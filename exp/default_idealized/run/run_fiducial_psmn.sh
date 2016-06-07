@@ -5,9 +5,9 @@
 ## job name:
 #$ -N fms_default
 ## queue:
-#$ -q E5-2670_test 
+#$ -q E5-2667v2deb128
 ## parallel environment & cpu nb:
-#$ -pe test_debian 16
+#$ -pe mpi16_debian 16
 ## SGE user environment:
 #$ -cwd
 ## Error/output files:
@@ -54,9 +54,9 @@ endif
 
 echo "$fms_home"
  
-set days            = 10                             # length of integration 
-set runs_per_script = 1                              # number of runs within this script
-set start_analysis  = 1                              # number of script run at which to start analysis (after spin-up) 
+set days            = 90                             # length of integration 
+set runs_per_script = 20                              # number of runs within this script
+set start_analysis  = 13                              # number of script run at which to start analysis (after spin-up) 
 set num_script_runs = 1                              # how many times to resubmit script to queue
 set days_per_segment = ${days}                       # days per segment of analysis (for seasonally-varying analysis)
 
