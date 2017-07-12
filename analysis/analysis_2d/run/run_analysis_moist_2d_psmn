@@ -1,11 +1,11 @@
 #!/bin/csh -f
 ### SGE variables:
 ## job shell:
-#$ -S /bin/csh 
+#$ -S /bin/csh
 ## job name:
 #$ -N fms_default_analysis2d
 ## queue:
-#$ -q monointeldeb64
+#$ -q monointeldeb128
 ## SGE user environment:
 #$ -cwd
 ## Error/output files:
@@ -13,7 +13,7 @@
 #$ -e $JOB_NAME-$JOB_ID.err
 ## Export environment variables:
 #$ -V
-#BSUB -R "rusage[scratch=320000]" 
+#BSUB -R "rusage[scratch=320000]"
 #BSUB -R "rusage[mem=56000]"
 #Note: 320000 MB scratch space and 56000 MB RAM should work for output of up to 90 days (T85, 180 days at T42)
 
@@ -29,7 +29,7 @@
 source /usr/share/modules/init/csh
 module unload openmpi
 module use /applis/PSMN/Modules
-module load Base/psmn    
+module load Base/psmn
 module load openmpi/1.6.4-intel-14.0.1
 module list
 
@@ -40,7 +40,7 @@ limit stacksize unlimited
 #set NPROCS = `echo $LSB_HOSTS| wc -w`
 echo "This job has allocated ${NSLOTS} cpus"
 
-#change the working directory (default is home directory)                   
+#change the working directory (default is home directory)
 #cd $LS_SUBCWD
 echo "Working directory is $cwd"
 
@@ -48,7 +48,7 @@ echo "Working directory is $cwd"
 set PotTmin           = 170
 set PotTmax           = 650
 
-# default frequency of FMS output [can be overwritten by post_processing_info] 
+# default frequency of FMS output [can be overwritten by post_processing_info]
 set fms_output_freq   = '4xday'
 set fms_surface_freq  = '1x20days'
 
@@ -73,7 +73,7 @@ set src_dir        = $analysis_dir/src                          # prefix for pat
 set exe_dir        = $run_analysis/exe.analysis                 # executable directory
 set executable     = analysis                                   # executable name
 set mppnccombine   = ${tmpdir1}/mppnccombine.ifc # path to the combine executable
-set include_dir    = $fms_home/bin/nc_inc 
+set include_dir    = $fms_home/bin/nc_inc
 set template       = $analysis_dir/input/mkmf.template.ifc_psmn # machine-specific compilation templates for your platform
 set diag_table     = $analysis_dir/input/diag_table.dt
 set pathnames      = $analysis_dir/input/path_list              # file containing list of code
@@ -86,7 +86,7 @@ echo "*** Running ${analysis_dir}/run_analysis_moist_2d for ${date_name} of ${ru
 
 
 mkdir -p ${input_dir}
-cd ${scratch_dir} 
+cd ${scratch_dir}
 foreach ncfile (`/bin/ls $uncombined_dir/${date_name}.*.nc.0000`)
   cp $ncfile:r.???? ${scratch_dir}
   set ncfile_tail = $ncfile:t
@@ -136,7 +136,7 @@ while ($isegment <= $num_segments)
       InputFileName = '$input_dir/$date_name.${fms_output_freq}.nc',
       OutputFileName = '$output_file_name'/
 EOF
-    
+
   echo $filename_list  | tr \$ "\n" >  $run_analysis/$date_name/input.nml
 
   set main_list = `cat -e` <<EOF
@@ -144,7 +144,7 @@ EOF
       DataIn = 1,
       data_source = 1,
       num_fourier = $num_fourier,
-      TimeIn     = $TimeIn, 
+      TimeIn     = $TimeIn,
       smooth_surface = .true.,
       MaxIsentrLev = 100,
       PotTempMin = $PotTmin,
@@ -163,28 +163,28 @@ EOF
       PrecipCondVarName = 'condensation_rain',
       PrecipConvVarName = 'convection_rain',
       ToaFluxSWVarName = 'swdn_toa',
-      ToaFluxLWUVarName = 'lwup_toa', 
+      ToaFluxLWUVarName = 'lwup_toa',
       SfcFluxSWVarName = 'swdn_sfc',
       SfcFluxLWDVarName = 'lwdn_sfc',
       SfcFluxLWUVarName = 'lwup_sfc',
       SfcFluxLHVarName = 'flux_lhe',
       SfcFluxSHVarName = 'flux_t',
-      SfcFluxQFVarName = 'flux_oceanq', 
+      SfcFluxQFVarName = 'flux_oceanq',
       DiabCondVarName = 'dt_tg_condensation',
       DiabConvVarName = 'dt_tg_convection',
       DiabDiffVarName = 'dt_tg_diffusion',
       DiabRadVarName = 'dt_tg_radiation',
       DiabSWVarName = 'dt_tg_solar',
-      BucketDepthVarName = 'bucket_depth', 
+      BucketDepthVarName = 'bucket_depth',
       BucketDepthConvVarName = 'bucket_depth_conv',
-      BucketDepthCondVarName = 'bucket_depth_cond', 
+      BucketDepthCondVarName = 'bucket_depth_cond',
       BucketDepthLHVarName = 'bucket_depth_lh',
       BucketDiffusionVarName = 'bucket_diffusion',
       DragMOVarName = 'drag_coeff_mo',
       DragLHVarName = 'drag_coeff_lh',
-      DragSHVarName = 'drag_coeff_sh', 
+      DragSHVarName = 'drag_coeff_sh',
       is_gaussian = .true.,
-      isentrope = .true., 
+      isentrope = .true.,
       moisture  = .true.,
       virtual   = .true.,
       bucket    = .false.,
@@ -213,12 +213,12 @@ if ( $successful_analysis == 1 ) then
   mkdir -p ${data_dir}/history
   mkdir -p ${data_dir}/logfiles
   mkdir -p ${data_dir}/surface
- 
+
   mv -f $output_dir/${date_name}*.nc  ${data_dir}/history/
   mv -f $input_dir/${date_name}.${fms_surface_freq}.nc ${data_dir}/surface/
   mv -f $uncombined_dir:h:h/logfiles/${date_name}.* ${data_dir}/logfiles/
 #  mv -f $output_dir/logfiles/$date_name.* ${data_dir}/logfiles/
- 
+
 
 
   # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
@@ -266,7 +266,7 @@ if ( ${successful_data} == 1 ) then
 endif
 
 # clean up
-rm $run_analysis/$date_name/$executable 
+rm $run_analysis/$date_name/$executable
 rm $run_analysis/$date_name/diag_table
 rm $run_analysis/$date_name/input.nml
 
