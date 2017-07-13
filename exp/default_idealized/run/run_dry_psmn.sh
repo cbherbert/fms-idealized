@@ -32,27 +32,18 @@ set HOSTFILE = "${TMPDIR}/machines"
 cd ${SGE_O_WORKDIR}
 echo "Working directory is $cwd"
 
+###
+#   Choose machine, model, analysis and integration parameters (USER-MODIFIABLE)
+###
 
 set model_type     = dry                          # if "moist", the moist model is run and if "dry, it is the dry. "moist_hydro" is for the bucket hydrology model. The namelists for the parameters are below (L212).
 set machine        = psmn                          # machine = euler or brutus, use the alternate runscripts for fram, or change mkmf templates, submission commands, and modules for other machines
 set analysis_type  = 2d                             # choose type of analysis: 2d (zonally averaged) or 3d (zonally varying) outputs
-set run_name       = "default_test_${model_type}_2d"          # label for run; output dir and working dir are run_name specific
+set run_name       = "default_test_${model_type}_${analysis_type}"          # label for run; output dir and working dir are run_name specific
 set run_script     = "$cwd/run_dry_psmn.sh"                  # path/name of this run script (for resubmit)
-
-set exp_home       = "$cwd:h"                         # directory containing run/$run_script and input/
-set exp_name       = "$exp_home:t"                    # name of experiment (i.e., name of this model build)
-set fms_home       = "$cwd:h:h:h/idealized"           # directory containing model source code, etc, usually /home/$USER/fms/idealized
-set home_dir       = "$home"
-# SET UP PERSONAL DIRECTORY ON SCRATCH DISC
-if (${machine} == euler) then                            # assignment of temp directory to scratch space
-   set work_dir     = "/cluster/work/beta2/clidyn/"        # (EULER) please change clidyn to a folder name of your choice (beta1-4 available)
-else if (${machine} == brutus) then
-   set work_dir     = "/cluster/scratch_xp/public/clidyn/" # (BRUTUS) please change clidyn to a folder name of your choice
-else
-   set work_dir     = "$fms_home:h"
-endif
-
-echo "$fms_home"
+#set echo
+echo "*** Running ${run_script} on `hostname` ***"
+date
 
 set days            = 90                             # length of integration
 set runs_per_script = 20                              # number of runs within this script
@@ -63,29 +54,15 @@ set days_per_segment = ${days}                       # days per segment of analy
 @ num_segments       = ${days} / ${days_per_segment} # number of analysis segments
 echo "num_segments    = $num_segments"
 
-# find data directory location,
-
-set data_dir = ${work_dir}/fms_output/${exp_name}/${run_name}
-set tmpdir1 = ${work_dir}/fms_tmp/${exp_name}
-
-#set echo
-echo "*** Running ${run_script} on `hostname` ***"
-date
+###
+#   Information about MPI and CPUS; load machine-specific environment
+###
 
 # Tell me which nodes it is run on; for sending messages to help-hpc
 #echo " "
 #echo This jobs runs on the following processors:
 #echo $LSB_HOSTS
 #echo " "
-#----------------------------------------------------------------------
-
-# zonally averaged analysis
-set analysis_version = analysis_${analysis_type}
-set analysis_script = run_analysis_${model_type}_${analysis_type}_${machine}
-set diagtable   = $exp_home/input/diag_table_${model_type}_${analysis_type}     # path to diagnostics table
-set analysis_dir = ${fms_home:h}/analysis/$analysis_version/run                 # location of analysis directory
-
-#--------------------------------------------------------------------------------------------------------
 
 #source /etc/profile.d/modules.sh
 if (${machine} == euler) then
@@ -108,8 +85,52 @@ endif
 
 echo "MPI Used:" `which mpirun`
 
-#set NPROCS=`echo $LSB_HOSTS| wc -w`
-echo "This job has allocated $NSLOTS cpus"
+#set NPROCS=`echo $LSB_HOSTS| wc -w` # this only works with Intel Platform LSF
+echo "This job has allocated $NSLOTS cpus" # NSLOTS is defined by SGE
+
+#--------------------------------------------------------------------------------------------------------
+
+###
+#   Setting up the directory hierarchy
+###
+
+# Input dirs:
+set exp_home    = "$cwd:h"                                               # directory containing run/$run_script and input/
+set exp_name    = "$exp_home:t"                                          # name of experiment (i.e., name of this model build)
+set fms_home    = "$cwd:h:h:h/idealized"                                 # directory containing model source code, etc, usually /home/$USER/fms/idealized
+set pathnames   = $exp_home/input/path_names                             # path to file containing list of source paths
+set namelist    = $exp_home/input/namelists_${model_type}                # path to namelist file
+set fieldtable  = $exp_home/input/field_table_${model_type}              # path to field table (specifies tracers)
+set template    = $fms_home/bin/mkmf.template.${platform}_${machine}_mpi # path to template for your platform
+set mkmf        = $fms_home/bin/mkmf                                     # path to executable mkmf
+set sourcedir   = $fms_home/src                                          # path to directory containing model source code
+set time_stamp  = $fms_home/bin/time_stamp.csh                           # generates string date for file name labels
+
+
+# Output dirs:
+# Set up work directory on scratch space (MACHINE-DEPENDENT)
+if (${machine} == euler) then
+   set scratchdir    = "/cluster/work/beta2/clidyn/"        # (EULER) please change clidyn to a folder name of your choice (beta1-4 available)
+else if (${machine} == brutus) then
+   set scratchdir    = "/cluster/scratch_xp/public/clidyn/" # (BRUTUS) please change clidyn to a folder name of your choice
+else
+   set scratchdir    = "$fms_home:h"                        # Fall-back: use the base fms-idealized directory
+endif
+set data_dir         = ${scratchdir}/fms_output/${exp_name}/${run_name}
+set tmpdir1          = ${scratchdir}/fms_tmp/${exp_name}
+set run_dir          = $tmpdir1/$run_name                   # tmp directory for current run
+set workdir          = $run_dir/workdir                     # where model is run and model output is produced; deleted at the end of the script if everything goes well
+set output_dir       = $run_dir/output                      # output directory will be created here
+set execdir          = $tmpdir1/exe.fms                     # where code is compiled and executable is created
+set mppnccombine     = $tmpdir1/mppnccombine.$platform      # path to executable mppnccombine
+set run_analysis     = $run_dir/analysis                    # where analysis is run
+set analysis_out_err = $run_analysis/out_err                # out and err for analysis (I THINK THIS DIRECTORY IS NEVER USED!!!)
+
+# zonally averaged analysis
+set analysis_version = analysis_${analysis_type}
+set analysis_script = run_analysis_${model_type}_${analysis_type}_${machine}
+set diagtable   = $exp_home/input/diag_table_${model_type}_${analysis_type}     # path to diagnostics table
+set analysis_dir = ${fms_home:h}/analysis/$analysis_version/run                 # location of analysis directory
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -118,37 +139,21 @@ limit stacksize unlimited
 cd $exp_home
 
 # define variables
-#set tmpdir1      = $home/fms_tmp/${exp_name}          # temporary directory for model workdir, output, etc
-set run_dir     = $tmpdir1/$run_name                  # tmp directory for current run
-set workdir     = $run_dir/workdir                   # where model is run and model output is produced
-set output_dir  = $run_dir/output                    # output directory will be created here
 set platform    = ifc                                # a unique identifier for your platform
 
 # note the following init_cond's are overwritten later if reload_commands exists
 set init_cond   = ""
 
-set pathnames   = $exp_home/input/path_names                       # path to file containing list of source paths
-
-
-set namelist    = $exp_home/input/namelists_${model_type}          # path to namelist file
-set fieldtable  = $exp_home/input/field_table_${model_type}        # path to field table (specifies tracers)
-set execdir     = $tmpdir1/exe.fms                                  # where code is compiled and executable is created
-set run_analysis = $run_dir/analysis                               # where analysis is run
-set analysis_out_err = $run_analysis/out_err                       # out and err for analysis
-set mppnccombine = $tmpdir1/mppnccombine.$platform                  # path to executable mppnccombine
-set template    = $fms_home/bin/mkmf.template.${platform}_${machine}_mpi # path to template for your platform
-set mkmf        = $fms_home/bin/mkmf                               # path to executable mkmf
-set sourcedir   = $fms_home/src                                    # path to directory containing model source code
-set time_stamp  = $fms_home/bin/time_stamp.csh                     # generates string date for file name labels
-
 set ireload     = 1                                  # counter for resubmitting this run script
 set irun        = 1                                  # counter for multiple model submissions within this script
 #--------------------------------------------------------------------------------------------------------
 
+###
+#   Preparing the run (compile code, etc)
+###
+
 # if exists, load reload file
-
 set reload_file = ${run_dir}/reload_commands
-
 if ( -d $run_dir )  then
   if ( -f $reload_file ) then
      # set irun, ireload, init_cond
@@ -156,11 +161,11 @@ if ( -d $run_dir )  then
   endif
 endif
 
-#--------------------------------------------------------------------------------------------------------
+# otherwise, prepare for a new run
 
-# setup directory structure
+# creating directory structure
 mkdir -p $execdir $run_analysis $analysis_out_err
-
+mkdir -p $output_dir/{combine,logfiles,restart}
 if ( ! -e $workdir ) then
     mkdir -p $workdir/{INPUT,RESTART} && echo "Directory $workdir created with subdirectories INPUT and RESTART."
 else
@@ -169,23 +174,18 @@ else
     echo "WARNING: Existing workdir $workdir removed and replaced with empty one, with subdirectories INPUT and RESTART."
 endif
 
-mkdir -p $output_dir/{combine,logfiles,restart}
-
-#--------------------------------------------------------------------------------------------------------
 
 # compile mppnccombine.c, needed only if $npes > 1
 if ( ! -f $mppnccombine ) then
   gcc -O -o $mppnccombine -I$fms_home/bin/nc_inc -L$fms_home/bin/nc_lib $fms_home/postprocessing/mppnccombine.c -lnetcdf
 endif
 
-#--------------------------------------------------------------------------------------------------------
 
 # compile the model code and create executable
 
 # append fms_home (containing netcdf libraries and include files) to template
 /bin/cp $template $workdir/tmp_template
 echo "fms_home = $fms_home" >> $workdir/tmp_template
-
 
 # Prepend fortran files in srcmods directory to pathnames.
 # Use 'find' to make list of srcmod/*.f90 files. mkmf uses only the first instance of any file name.
@@ -211,10 +211,8 @@ if ( $init_cond != "" ) then
 #  rm -f $init_cond:t
 endif
 
-# name of ocean mask file, will only be used if load_mask = .true. in atmosphere_nml
-set ocean_mask = ocean_mask_T42.nc
-
 # if ocean_mask exists, move it to workdir/INPUT folder O.A. May 2014
+set ocean_mask = ocean_mask_T42.nc # name of ocean mask file, will only be used if load_mask = .true. in atmosphere_nml
 if (-e $exp_home/input/${ocean_mask}) then
    cp $exp_home/input/${ocean_mask} ocean_mask.nc
    cd $output_dir
@@ -222,6 +220,11 @@ if (-e $exp_home/input/${ocean_mask}) then
 endif
 
 #--------------------------------------------------------------------------------------------------------
+
+###
+#   The actual model run starts here
+###
+
 
 #  --- begin loop over $irun ---
 while ($irun <= $runs_per_script)
@@ -594,5 +597,3 @@ else
 endif
 
 date
-
-
