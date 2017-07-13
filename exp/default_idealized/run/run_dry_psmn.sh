@@ -38,6 +38,7 @@ echo "Working directory is $cwd"
 
 set model_type     = dry                          # if "moist", the moist model is run and if "dry, it is the dry. "moist_hydro" is for the bucket hydrology model. The namelists for the parameters are below (L212).
 set machine        = psmn                          # machine = euler or brutus, use the alternate runscripts for fram, or change mkmf templates, submission commands, and modules for other machines
+set platform       = ifc                           # a unique identifier for your platform
 set analysis_type  = 2d                             # choose type of analysis: 2d (zonally averaged) or 3d (zonally varying) outputs
 set run_name       = "default_test_${model_type}_${analysis_type}"          # label for run; output dir and working dir are run_name specific
 set run_script     = "$cwd/run_dry_psmn.sh"                  # path/name of this run script (for resubmit)
@@ -137,9 +138,6 @@ set analysis_dir = ${fms_home:h}/analysis/$analysis_version/run                 
 limit stacksize unlimited
 
 cd $exp_home
-
-# define variables
-set platform    = ifc                                # a unique identifier for your platform
 
 # note the following init_cond's are overwritten later if reload_commands exists
 set init_cond   = ""
