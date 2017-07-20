@@ -204,14 +204,18 @@ contains
             read  (unit, nml=hs_forcing_nml, iostat=io, end=10)
             ierr = check_nml_error (io, 'hs_forcing_nml')
          enddo
-         ierr=1
-         do while (ierr /= 0)
-            read  (unit, nml=atf_forcing_nml, iostat=io, end=10)
-            ierr = check_nml_error (io, 'atf_forcing_nml')
-         enddo
   10     call close_file (unit)
       endif
 
+      if (file_exist('input.nml')) then
+         unit = open_namelist_file ( )
+         ierr=1
+         do while (ierr /= 0)
+            read  (unit, nml=atf_forcing_nml, iostat=io, end=20)
+            ierr = check_nml_error (io, 'atf_forcing_nml')
+         enddo
+  20     call close_file (unit)
+      endif
 
 !     ----- write version info and namelist to log file -----
 
