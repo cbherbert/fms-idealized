@@ -41,7 +41,7 @@ set machine        = psmn                          # machine = euler or brutus, 
 set platform       = ifc                           # a unique identifier for your platform
 set analysis_type  = 2d                             # choose type of analysis: 2d (zonally averaged) or 3d (zonally varying) outputs
 set run_name       = "superrot_${model_type}_dh00_g1_q01_${analysis_type}"          # label for run; output dir and working dir are run_name specific
-set run_script     = "$cwd/run_atf0_psmn.sh"                  # path/name of this run script (for resubmit)
+set run_script     = "$cwd/run_atf0_psmn.csh"                  # path/name of this run script (for resubmit)
 #set echo
 echo "*** Running ${run_script} on `hostname` ***"
 date
