@@ -76,11 +76,8 @@ else if (${machine} == brutus) then
     module load open_mpi/1.4.5
     module list
 else if (${machine} == psmn) then
-    source /usr/share/modules/init/csh
-    module unload openmpi
-    module use /applis/PSMN/Modules
-    module load Base/psmn
-    module load openmpi/1.6.4-intel-14.0.1
+    source /usr/share/lmod/lmod/init/tcsh
+    module load IntelComp/2017.4/OpenMPI/3.0.0
     module list
 endif
 
@@ -450,7 +447,7 @@ EOF
 
     # run the model with mpirun
     set MX_RCACHE=2
-    mpirun -v -mca btl sm,openib,self -hostfile ${HOSTFILE} -np ${NSLOTS} ${workdir}/fms.x
+    mpirun -v -mca btl vader,openib,self -hostfile ${HOSTFILE} -np ${NSLOTS} ${workdir}/fms.x
 
     #--------------------------------------------------------------------------------------------------------
 
