@@ -3,7 +3,7 @@
 ## job shell:
 #$ -S /bin/csh
 ## job name:
-#$ -N fms_super_test
+#$ -N fms_super_dh00_g1_q01_2d
 ## queue:
 #$ -q E5-2667v2h6deb128
 ## parallel environment & cpu nb:
@@ -40,7 +40,7 @@ set model_type     = dry                          # if "moist", the moist model 
 set machine        = psmn                          # machine = euler or brutus, use the alternate runscripts for fram, or change mkmf templates, submission commands, and modules for other machines
 set platform       = ifc                           # a unique identifier for your platform
 set analysis_type  = 2d                             # choose type of analysis: 2d (zonally averaged) or 3d (zonally varying) outputs
-set run_name       = "superrot_test_${model_type}_${analysis_type}"          # label for run; output dir and working dir are run_name specific
+set run_name       = "superrot_${model_type}_dh00_g1_q01_${analysis_type}"          # label for run; output dir and working dir are run_name specific
 set run_script     = "$cwd/run_atf0_psmn.sh"                  # path/name of this run script (for resubmit)
 #set echo
 echo "*** Running ${run_script} on `hostname` ***"
@@ -251,7 +251,7 @@ EOF
 
       &atmosphere_nml
 	two_stream           = .false.,
-	turb                 = .true.,
+	turb                 = .true., ! enable vertical diffusion
 	ldry_convection      = .true.,
 	dry_model            = .true.,
 	lwet_convection      = .false.,
@@ -324,6 +324,11 @@ EOF
 
     cat >> input.nml <<EOF
 
+      &hs_forcing_nml
+        delh                 = 0.0/
+
+      &atf_forcing_nml
+	q0atf                = 0.1/
 
       &grid_phys_list
 	tsfc_sp                  = 260.0,
@@ -338,7 +343,7 @@ EOF
 	phi0                     = 0.0/
 
       &dry_convection_nml
-	gamma                    = 0.7,
+	gamma                    = 1.0,
 	tau                      = 14400.0/
 
       &spectral_init_cond_nml
