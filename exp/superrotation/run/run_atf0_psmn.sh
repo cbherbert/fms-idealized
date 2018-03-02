@@ -547,6 +547,7 @@ EOF
 	echo "set exp_name = $exp_name" > post_processing_info
 	echo "set data_dir = $data_dir" >> post_processing_info
 	echo "set run_name = $run_name" >> post_processing_info
+	echo "set run_script = $run_script" >> post_processing_info
 	echo "set date_name = $date_name" >> post_processing_info
 	echo "set run_analysis = $run_analysis" >> post_processing_info
 	echo "set fms_home = $fms_home" >> post_processing_info

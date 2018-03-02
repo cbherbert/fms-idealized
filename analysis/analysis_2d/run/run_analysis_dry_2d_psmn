@@ -81,17 +81,17 @@ alias mkmf           $fms_home/bin/mkmf                         # produces makef
 echo "*** Running ${analysis_dir}/run_analysis_dry_2d for ${date_name} of ${run_name} on $HOSTNAME ***"
 
 #### STEP 1: Combine the data files ####
-
+# This takes all the nc files in output/combine/$date_name/ and creates a combined nc file in combine/
 
 mkdir -p ${input_dir}
 cd ${scratch_dir}
 foreach ncfile (`/bin/ls $uncombined_dir/${date_name}.*.nc.0000`)
-  cp $ncfile:r.???? ${scratch_dir}
+  \cp $ncfile:r.???? ${scratch_dir}
   set ncfile_tail = $ncfile:t
   rm -f $ncfile_tail:r
   $mppnccombine $ncfile_tail:r
   if ($status == 0) then
-     mv $ncfile_tail:r ${input_dir}
+     mv -f $ncfile_tail:r ${input_dir}
      echo "$ncfile:r combined in ${scratch_dir} on $HOSTNAME"
   endif
   rm -f $ncfile_tail:r.????
@@ -99,6 +99,8 @@ end
 
 
 #### STEP 2: Run the analysis ####
+# This creates the analysis executable and copies it to the date_name directory, and also the diag_table file.
+# Then the loop creates the input.nml file and the analysis code creates the nc file in history/
 
 set successful_analysis = 1 # this gets set to 0 if an indicator suggests any instance of analysis failed.
 
@@ -113,8 +115,8 @@ echo "fms_home =  $fms_home" > $exe_dir/tmp_template
 /bin/cat $template >> $exe_dir/tmp_template
 mkmf -a $src_dir -c"-Daix" -t $exe_dir/tmp_template -p $executable $pathnames $include_dir
 make $executable
-cp $executable $run_analysis/$date_name
-cp $diag_table $run_analysis/$date_name/diag_table
+\cp $executable $run_analysis/$date_name
+\cp $diag_table $run_analysis/$date_name/diag_table
 
 cd $run_analysis/$date_name
 # Loop over analysis segments and run analysis on each one
@@ -195,7 +197,7 @@ EOF
   echo $main_list  | tr \$ "\n" >>  $run_analysis/$date_name/input.nml
 
   ./$executable
-  set analysis_return_value = $?
+  set analysis_return_value = $status
   echo 'Return value of analysis' $analysis_return_value
   if ( $analysis_return_value != 0 ) set successful_analysis = 0
 
@@ -206,6 +208,7 @@ end # loop over $isegment ended
 if ( $successful_analysis == 1 ) then
 
   #### STEP 3: Move model output (analysis and surface) to data_dir ####
+  # i.e. outside of the temporary directories, to the fms_output tree
 
   # copy model history and logfiles to ${data_dir}
   mkdir -p ${data_dir}/history
@@ -213,15 +216,12 @@ if ( $successful_analysis == 1 ) then
   mkdir -p ${data_dir}/surface
 
   mv -f $output_dir/${date_name}*.nc  ${data_dir}/history/
-  mv -f $input_dir/${date_name}.${fms_surface_freq}.nc ${data_dir}/surface/
-  mv -f $uncombined_dir:h:h/logfiles/${date_name}.* ${data_dir}/logfiles/
-#  mv -f $output_dir/logfiles/$date_name.* ${data_dir}/logfiles/
-
-
+  mv -f $input_dir/${date_name}.${fms_output_freq}.nc ${data_dir}/surface/
+  \cp -f $uncombined_dir:h:h/logfiles/${date_name}.* ${data_dir}/logfiles/
 
   # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
   cd $fms_home:h/exp/${exp_name}/
-  tar czvf ${data_dir}/scripts.tgz run/run_${run_name} srcmods/
+  tar czvf ${data_dir}/scripts.tgz ${run_script} srcmods/
 
 endif
 
@@ -267,4 +267,3 @@ endif
 rm $run_analysis/$date_name/$executable
 rm $run_analysis/$date_name/diag_table
 rm $run_analysis/$date_name/input.nml
-
