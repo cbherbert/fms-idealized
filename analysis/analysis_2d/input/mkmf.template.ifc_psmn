@@ -1,13 +1,13 @@
 # -*-mode: Makefile-*-
 # Makefile template for intel compiler
 # ian: note that run_analysis appends definition of fms_home to beginning of file.
-FC = /softs/intel/v13/bin/ifort
-LD = /softs/intel/v13/bin/ifort
+FC = ifort
+LD = ifort
 CPPFLAGS =
 FFLAGS = -r8 -fpp -O2 -I$(fms_home)/bin/nc_inc -D__IFC
 LDFLAGS = -L/usr/local/lib -L$(fms_home)/bin/nc_lib -lnetcdf
 LIST = -Mlist
-CFLAGS=  -D__IFC 
+CFLAGS=  -D__IFC
 
 
 #LDFLAGS = -L/usr/local/lib -L$(fms_home)/bin/nc_lib -lnetcdf -static-libcxa
@@ -16,7 +16,7 @@ CFLAGS=  -D__IFC
 
 #FFLAGS = -r8 -fpp -O2 -I/opt/netcdf4/include/ -D__IFC
 #LDFLAGS = -L/usr/local/lib -L/opt/netcdf4/lib/ -lnetcdf -static-libcxa
-#CFLAGS=  -I/opt/netcdf4/include/ -D__IFC 
+#CFLAGS=  -I/opt/netcdf4/include/ -D__IFC
 
 # you should never need to change any lines below.
 

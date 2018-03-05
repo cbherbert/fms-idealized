@@ -24,11 +24,8 @@
 # Corentin Herbert, May 2016
 
 
-source /usr/share/modules/init/csh
-module unload openmpi
-module use /applis/PSMN/Modules
-module load Base/psmn
-module load openmpi/1.6.4-intel-14.0.1
+source /usr/share/lmod/lmod/init/tcsh
+module load IntelComp/2017.4
 module list
 
 
