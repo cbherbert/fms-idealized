@@ -114,7 +114,6 @@ output_dir="$run_dir/output"                   # output directory will be create
 execdir="$tmpdir1/exe.fms"                     # where code is compiled and executable is created
 mppnccombine="$tmpdir1/mppnccombine.$platform" # path to executable mppnccombine
 run_analysis="$run_dir/analysis"               # where analysis is run
-analysis_out_err="$run_analysis/out_err"       # out and err for analysis (I THINK THIS DIRECTORY IS NEVER USED!!!)
 
 # zonally averaged analysis
 analysis_version="analysis_${analysis_type}"
@@ -151,7 +150,7 @@ fi
 # otherwise, prepare for a new run
 
 # creating directory structure
-mkdir -p $execdir $run_analysis $analysis_out_err
+mkdir -p $execdir $run_analysis
 mkdir -p $output_dir/{combine,logfiles,restart}
 if [ ! -e "$workdir" ]; then
     mkdir -p $workdir/{INPUT,RESTART} && echo "Directory $workdir created with subdirectories INPUT and RESTART."
