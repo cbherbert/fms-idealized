@@ -553,8 +553,7 @@ EOF
 
         # ssh to head node and submit analysis script
 	echo "*** Submitting analyis script"
-	#ssh psmnsb "source ~/.profile; cd ${postproc_dir} && qsub ${analysis_script}"
-	cd ${postproc_dir} && bash ${analysis_script}
+	ssh psmnsb "bash -l -c 'cd ${postproc_dir} && qsub ${analysis_script}'"
     else
 	rm -rf "${output_dir}/combine/${date_name}"
     fi
