@@ -129,7 +129,7 @@ set analysis_out_err = $run_analysis/out_err                # out and err for an
 
 # zonally averaged analysis
 set analysis_version = analysis_${analysis_type}
-set analysis_script = run_analysis_${model_type}_${analysis_type}_${machine}
+set analysis_script = run_analysis_${model_type}_${analysis_type}_${machine}.csh
 set diagtable   = $exp_home/input/diag_table_${model_type}_${analysis_type}     # path to diagnostics table
 set analysis_dir = ${fms_home:h}/analysis/$analysis_version/run                 # location of analysis directory
 
