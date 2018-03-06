@@ -150,13 +150,13 @@ fi
 # otherwise, prepare for a new run
 
 # creating directory structure
-mkdir -p $execdir $run_analysis
-mkdir -p $output_dir/{combine,logfiles,restart}
+mkdir -p "$execdir" "$run_analysis"
+mkdir -p "$output_dir"/{combine,logfiles,restart}
 if [ ! -e "$workdir" ]; then
-    mkdir -p $workdir/{INPUT,RESTART} && echo "Directory $workdir created with subdirectories INPUT and RESTART."
+    mkdir -p "$workdir"/{INPUT,RESTART} && echo "Directory $workdir created with subdirectories INPUT and RESTART."
 else
-    rm -rf $workdir
-    mkdir -p $workdir/{INPUT,RESTART}
+    rm -rf "$workdir"
+    mkdir -p "$workdir"/{INPUT,RESTART}
     echo "WARNING: Existing workdir $workdir removed and replaced with empty one, with subdirectories INPUT and RESTART."
 fi
 
@@ -174,11 +174,11 @@ fi
 echo "fms_home = $fms_home" >> "$workdir/tmp_template"
 
 # Prepend fortran files in srcmods directory to pathnames.
-# Use 'find' to make list of srcmod/*.f90 files. mkmf uses only the first instance of any file name.
-cd "$sourcedir"
-find "$exp_home/srcmods/" -maxdepth 1 -iname "*.f90" -o -iname "*.inc" -o -iname "*.c" -o -iname "*.h" > "$workdir/tmp_pathnames"
-echo "Using the following sourcecode modifications:"
-cat "$workdir/tmp_pathnames"
+# mkmf uses only the first instance of any file name.
+shopt -s nullglob nocaseglob
+mods=( "$exp_home/srcmods"/*.{f90,inc,h,c} )
+{ [ "${#mods[@]}" -eq 0 ] || printf '%s\n' "${mods[@]}"; } > "$workdir/tmp_pathnames"
+[ "${#mods[@]}" -eq 0 ] || cat <(echo "Using the following sourcecode modifications:") "$workdir/tmp_pathnames"
 cat "$pathnames" >> "$workdir/tmp_pathnames"
 
 cd "$execdir"
