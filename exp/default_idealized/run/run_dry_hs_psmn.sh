@@ -528,6 +528,7 @@ EOF
 	echo "exp_name=$exp_name" > post_processing_info
 	echo "data_dir=$data_dir" >> post_processing_info
 	echo "run_name=$run_name" >> post_processing_info
+	echo "run_script=$run_script" >> post_processing_info
 	echo "date_name=$date_name" >> post_processing_info
 	echo "run_analysis=$run_analysis" >> post_processing_info
 	echo "fms_home=$fms_home" >> post_processing_info
@@ -547,11 +548,11 @@ EOF
 	   echo "final=0" >> post_processing_info
 	fi
 
-         cp "$analysis_dir/$analysis_script" ./
+        cp "$analysis_dir/$analysis_script" ./
 
         # ssh to head node and submit analysis script
 	echo "*** Submitting analyis script"
-	ssh psmnsb "bash -l -c 'cd ${postproc_dir} && qsub ${analysis_script}'"
+	ssh psmnsb "bash -l -c 'qsub -wd ${postproc_dir} ${postproc_dir}/${analysis_script}'"
     else
 	rm -rf "${output_dir}/combine/${date_name}"
     fi
