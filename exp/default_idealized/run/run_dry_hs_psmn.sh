@@ -93,7 +93,6 @@ namelist="$exp_home/input/namelists_${model_type}"                # path to name
 fieldtable="$exp_home/input/field_table_${model_type}"            # path to field table (specifies tracers)
 template="$fms_home/bin/mkmf.template.${platform}_${machine}_mpi" # path to template for your platform
 mkmf="$fms_home/bin/mkmf"                                         # path to executable mkmf
-sourcedir="$fms_home/src"                                         # path to directory containing model source code
 time_stamp="$fms_home/bin/time_stamp.csh"                         # generates string date for file name labels
 
 
@@ -182,7 +181,7 @@ mods=( "$exp_home/srcmods"/*.{f90,inc,h,c} )
 cat "$pathnames" >> "$workdir/tmp_pathnames"
 
 cd "$execdir"
-$mkmf -p fms.x -t "$workdir/tmp_template" -c "-Duse_libMPI -Duse_netCDF" -a "$sourcedir" "$workdir/tmp_pathnames" "$sourcedir/shared/include" "$sourcedir/shared/mpp/include"
+$mkmf -p fms.x -t "$workdir/tmp_template" -c "-Duse_libMPI -Duse_netCDF" -a "$fms_home/src" "$workdir/tmp_pathnames" "$fms_home/src/shared/include" "$fms_home/src/shared/mpp/include"
 make -f Makefile
 
 cd "$workdir/INPUT"
