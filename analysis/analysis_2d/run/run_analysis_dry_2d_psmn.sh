@@ -57,10 +57,10 @@ times_per_segment=$((days_per_segment * ${fms_output_freq:0:1} )) # number of in
 echo "$times_per_segment instants per segment, frequency $fms_output_freq."
 
 # directories
-analysis_dir="${fms_home%/*}/analysis/analysis_2d"           # directory with analysis code
+analysis_dir="$(dirname "$fms_home")/analysis/analysis_2d"           # directory with analysis code
 run_dir="${tmpdir1}/${run_name}"                  # tmp directory for current run
 #set scratch_dir    = $TMPDIR/${exp_name}/${run_name}     # scratch directory on specific compute node (faster read/write)
-scratch_dir="${fms_home%/*}/fms_tmp/${exp_name}/${run_name}"
+scratch_dir="$(dirname "$fms_home")/fms_tmp/${exp_name}/${run_name}"
 uncombined_dir="${tmpdir1}/${run_name}/output/combine/${date_name}" # directory with uncombined input data
 input_dir="${scratch_dir}/combine"                     # directory where combined netcdf files are written
 output_dir="${scratch_dir}/history"                     # directory where output is written
@@ -219,8 +219,7 @@ if [ $successful_analysis -eq 1 ]; then
   \cp -f $run_dir/output/logfiles/${date_name}.* ${data_dir}/logfiles/
 
   # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
-  cd "${fms_home%/*}/exp/${exp_name}/"
-  tar czvf ${data_dir}/scripts.tgz ${run_script} srcmods/
+  tar czvf ${data_dir}/scripts.tgz ${run_script} "$(dirname "$fms_home")/exp/${exp_name}/srcmods"
 
 fi
 
