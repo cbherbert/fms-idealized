@@ -88,11 +88,8 @@ echo "This job has allocated $NSLOTS cpus" # NSLOTS is defined by SGE
 exp_home="$(dirname "$PWD")"                                      # directory containing run/$run_script and input/
 exp_name="$(basename "$exp_home")"                                # name of experiment (i.e., name of this model build)
 fms_home="$(dirname "$(dirname $exp_home)")/idealized"            # directory containing model source code, etc, usually /home/$USER/fms/idealized
-pathnames="$exp_home/input/path_names"                            # path to file containing list of source paths
 namelist="$exp_home/input/namelists_${model_type}"                # path to namelist file
 fieldtable="$exp_home/input/field_table_${model_type}"            # path to field table (specifies tracers)
-template="$fms_home/bin/mkmf.template.${platform}_${machine}_mpi" # path to template for your platform
-mkmf="$fms_home/bin/mkmf"                                         # path to executable mkmf
 time_stamp="$fms_home/bin/time_stamp.csh"                         # generates string date for file name labels
 
 
@@ -161,28 +158,74 @@ fi
 
 
 # compile mppnccombine.c, needed only if $npes > 1
-if [ ! -f "$mppnccombine" ]; then
-  gcc -O -o $mppnccombine -I$fms_home/bin/nc_inc -L$fms_home/bin/nc_lib $fms_home/postprocessing/mppnccombine.c -lnetcdf
-fi
 
+function compile_mppnccombine {
+    # compile the mppnccombine utility to combine netCDF files corresponding to domain parallelization
+    local fms_home="$1"   # directory containing model source code, etc, usually /home/$USER/fms/idealized
+    local target="$2"     # path to the compiled executable
 
-# compile the model code and create executable
+    cat <<EOF
 
-# append fms_home (containing netcdf libraries and include files) to template
-/bin/cp "$template" "$workdir/tmp_template"
-echo "fms_home = $fms_home" >> "$workdir/tmp_template"
+*****************************
+Compiling mppnccombine utility...
+*****************************
 
-# Prepend fortran files in srcmods directory to pathnames.
-# mkmf uses only the first instance of any file name.
-shopt -s nullglob nocaseglob
-mods=( "$exp_home/srcmods"/*.{f90,inc,h,c} )
-{ [ "${#mods[@]}" -eq 0 ] || printf '%s\n' "${mods[@]}"; } > "$workdir/tmp_pathnames"
-[ "${#mods[@]}" -eq 0 ] || cat <(echo "Using the following sourcecode modifications:") "$workdir/tmp_pathnames"
-cat "$pathnames" >> "$workdir/tmp_pathnames"
+EOF
 
-cd "$execdir"
-$mkmf -p fms.x -t "$workdir/tmp_template" -c "-Duse_libMPI -Duse_netCDF" -a "$fms_home/src" "$workdir/tmp_pathnames" "$fms_home/src/shared/include" "$fms_home/src/shared/mpp/include"
-make -f Makefile
+    if [ ! -f "$target" ]; then
+	gcc -O -o "$target" -I"$fms_home/bin/nc_inc" -L"$fms_home/bin/nc_lib" "$fms_home/postprocessing/mppnccombine.c" -lnetcdf
+    fi
+
+    cat <<EOF
+
+Compilation Done (mppnccombine)
+*****************************
+
+EOF
+}
+compile_mppnccombine "$fms_home" "$mppnccombine"
+
+function compile_fms {
+    # compile the model code and create executable
+    local exp_home="$1"                                          # experiment root directory, used for source code modifications and list of source paths
+    local fms_home="$(dirname "$(dirname $exp_home)")/idealized" # directory containing model source code, etc, usually /home/$USER/fms/idealized
+    local template="$fms_home/bin/$2"                            # path to template for your platform
+    local execdir="$3"                                           # directory where executable will be compiled
+    local pathnames="$exp_home/input/path_names"                 # path to file containing list of source paths
+
+    cat <<EOF
+
+*****************************
+Compiling model code...
+*****************************
+
+EOF
+
+    # append fms_home (containing netcdf libraries and include files) to template
+    /bin/cp "$template" "$execdir/tmp_template"
+    echo "fms_home = $fms_home" >> "$execdir/tmp_template"
+
+    # Prepend fortran files in srcmods directory to pathnames.
+    # mkmf uses only the first instance of any file name.
+    shopt -s nullglob nocaseglob
+    mods=( "$exp_home/srcmods"/*.{f90,inc,h,c} )
+    { [ "${#mods[@]}" -eq 0 ] || printf '%s\n' "${mods[@]}"; } > "$execdir/tmp_pathnames"
+    [ "${#mods[@]}" -eq 0 ] || cat <(echo "Using the following sourcecode modifications:") "$execdir/tmp_pathnames"
+    cat "$pathnames" >> "$execdir/tmp_pathnames"
+
+    cd "$execdir"
+    $fms_home/bin/mkmf -p fms.x -t "$execdir/tmp_template" -c "-Duse_libMPI -Duse_netCDF" -a "$fms_home/src" "$execdir/tmp_pathnames" "$fms_home/src/shared/include" "$fms_home/src/shared/mpp/include"
+    make -f Makefile
+
+    cat <<EOF
+
+Compilation Done (fms)
+*****************************
+
+EOF
+}
+compile_fms "$exp_home" "mkmf.template.${platform}_${machine}_mpi" "$execdir"
+
 
 cd "$workdir/INPUT"
 
