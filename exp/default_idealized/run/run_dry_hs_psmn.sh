@@ -108,7 +108,6 @@ run_dir="$tmpdir1/$run_name"                   # tmp directory for current run
 workdir="$run_dir/workdir"                     # where model is run and model output is produced; deleted at the end of the script if everything goes well
 output_dir="$run_dir/output"                   # output directory will be created here
 execdir="$tmpdir1/exe.fms"                     # where code is compiled and executable is created
-mppnccombine="$tmpdir1/mppnccombine.$platform" # path to executable mppnccombine
 run_analysis="$run_dir/analysis"               # where analysis is run
 
 # zonally averaged analysis
@@ -158,73 +157,10 @@ fi
 
 
 # compile mppnccombine.c, needed only if $npes > 1
+# mppnccombine compiles with all the gcc version in module files (4.9.4, 5.4.0, 6.4.0, 7.2.0) or with icc 17.0.4 but not with the default Debian gcc (6.3.0-18)
+$fms_home/bin/compile_mppnccombine "$fms_home" "$tmpdir1/mppnccombine.$platform"
 
-function compile_mppnccombine {
-    # compile the mppnccombine utility to combine netCDF files corresponding to domain parallelization
-    local fms_home="$1"   # directory containing model source code, etc, usually /home/$USER/fms/idealized
-    local target="$2"     # path to the compiled executable
-
-    cat <<EOF
-
-*****************************
-Compiling mppnccombine utility...
-*****************************
-
-EOF
-
-    if [ ! -f "$target" ]; then
-	gcc -O -o "$target" -I"$fms_home/bin/nc_inc" -L"$fms_home/bin/nc_lib" "$fms_home/postprocessing/mppnccombine.c" -lnetcdf
-    fi
-
-    cat <<EOF
-
-Compilation Done (mppnccombine)
-*****************************
-
-EOF
-}
-compile_mppnccombine "$fms_home" "$mppnccombine"
-
-function compile_fms {
-    # compile the model code and create executable
-    local exp_home="$1"                                          # experiment root directory, used for source code modifications and list of source paths
-    local fms_home="$(dirname "$(dirname $exp_home)")/idealized" # directory containing model source code, etc, usually /home/$USER/fms/idealized
-    local template="$fms_home/bin/$2"                            # path to template for your platform
-    local execdir="$3"                                           # directory where executable will be compiled
-    local pathnames="$exp_home/input/path_names"                 # path to file containing list of source paths
-
-    cat <<EOF
-
-*****************************
-Compiling model code...
-*****************************
-
-EOF
-
-    # append fms_home (containing netcdf libraries and include files) to template
-    /bin/cp "$template" "$execdir/tmp_template"
-    echo "fms_home = $fms_home" >> "$execdir/tmp_template"
-
-    # Prepend fortran files in srcmods directory to pathnames.
-    # mkmf uses only the first instance of any file name.
-    shopt -s nullglob nocaseglob
-    mods=( "$exp_home/srcmods"/*.{f90,inc,h,c} )
-    { [ "${#mods[@]}" -eq 0 ] || printf '%s\n' "${mods[@]}"; } > "$execdir/tmp_pathnames"
-    [ "${#mods[@]}" -eq 0 ] || cat <(echo "Using the following sourcecode modifications:") "$execdir/tmp_pathnames"
-    cat "$pathnames" >> "$execdir/tmp_pathnames"
-
-    cd "$execdir"
-    $fms_home/bin/mkmf -p fms.x -t "$execdir/tmp_template" -c "-Duse_libMPI -Duse_netCDF" -a "$fms_home/src" "$execdir/tmp_pathnames" "$fms_home/src/shared/include" "$fms_home/src/shared/mpp/include"
-    make -f Makefile
-
-    cat <<EOF
-
-Compilation Done (fms)
-*****************************
-
-EOF
-}
-compile_fms "$exp_home" "mkmf.template.${platform}_${machine}_mpi" "$execdir"
+$fms_home/bin/compile_fms "$exp_home" "mkmf.template.${platform}_${machine}_mpi" "$execdir"
 
 
 cd "$workdir/INPUT"

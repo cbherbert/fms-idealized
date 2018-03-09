@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Simple shell script to compile the mppnccombine utility
+# which combines netCDF files corresponding to domain parallelization.
+#
+# Now this is a shell script for historical reasons,
+# but it might be converted into a Makefile in the future.
+#
+# Corentin Herbert (CNRS, ENS Lyon), 2018
+
+
+function usage {
+    cat <<EOF
+Compile the mppnccombine utility, which combines netCDF files corresponding to domain parallelization.
+
+Usage: $ compile_mppnccombine fms_home mppnccombine
+
+fms_home:       directory containing model source code, etc, usually /home/$USER/fms/idealized
+mppnccombine:   path to the compiled executable (target)
+
+EOF
+}
+
+if [ $# -ne 2 ]; then
+    usage
+    exit
+fi
+
+fms_home="$1"   # directory containing model source code, etc, usually /home/$USER/fms/idealized
+target="$2"     # path to the compiled executable
+
+cat <<EOF
+
+*****************************
+Compiling mppnccombine utility...
+*****************************
+
+EOF
+
+if [ ! -f "$target" ]; then
+    ${CC:-gcc} -O -o "$target" -I"$fms_home/bin/nc_inc" -L"$fms_home/bin/nc_lib" "$fms_home/postprocessing/mppnccombine.c" -lnetcdf
+fi
+
+cat <<EOF
+
+Compilation Done (mppnccombine)
+*****************************
+
+EOF

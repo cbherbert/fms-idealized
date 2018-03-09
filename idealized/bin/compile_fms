@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# Simple shell script to compile the fms model code, taking into
+# account local source code modifications for an experiment.
+#
+# Now this is a shell script for historical reasons,
+# but it might be converted into a Makefile (or another standard build system) in the future.
+#
+# Corentin Herbert (CNRS, ENS Lyon), 2018
+
+function usage {
+    cat <<EOF
+Compile model code, taking into account local source code modifications for an experiment.
+
+Usage: $ compile_experiment experiment_home mkmf_template_file execdir
+
+experiment_home: experiment root directory, used for source code modifications and list of source paths (e.g. fms-idealized/exp/default_idealized)
+mkmf_template:   template file for your platform used by mkmf to generate the Makefile (e.g. mkmf.template.ifc_psmn_mpi)
+execdir:         directory where executable will be compiled (e.g. fms_tmp/default_idealized/exe.fms)
+
+Note: before running this script, make sure that the compiler specified in the template file is available.
+This may require loading the appropriate module on a cluster.
+
+EOF
+
+}
+
+function abspath { echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"; }
+
+if [ $# -ne 3 ]; then
+    usage
+    exit
+fi
+
+
+exp_home="$(abspath $1)"                               # experiment root directory, used for source code modifications and list of source paths
+fms_home="$(dirname "$(dirname $exp_home)")/idealized" # directory containing model source code, etc, usually /home/$USER/fms/idealized
+template="$fms_home/bin/$2"                            # path to template for your platform
+execdir="$3"                                           # directory where executable will be compiled
+pathnames="$exp_home/input/path_names"                 # path to file containing list of source paths
+
+cat <<EOF
+
+*****************************
+Compiling model code...
+*****************************
+
+EOF
+
+# append fms_home (containing netcdf libraries and include files) to template
+mkdir -p "$execdir"
+/bin/cp "$template" "$execdir/tmp_template"
+echo "fms_home = $fms_home" >> "$execdir/tmp_template"
+
+# Prepend fortran files in srcmods directory to pathnames.
+# mkmf uses only the first instance of any file name.
+shopt -s nullglob nocaseglob
+mods=( "$exp_home/srcmods"/*.{f90,inc,h,c} )
+{ [ "${#mods[@]}" -eq 0 ] || printf '%s\n' "${mods[@]}"; } > "$execdir/tmp_pathnames"
+[ "${#mods[@]}" -eq 0 ] || cat <(echo "Using the following sourcecode modifications:") "$execdir/tmp_pathnames"
+cat "$pathnames" >> "$execdir/tmp_pathnames"
+
+cd "$execdir"
+$fms_home/bin/mkmf -p fms.x -t "tmp_template" -c "-Duse_libMPI -Duse_netCDF" -a "$fms_home/src" "tmp_pathnames" "$fms_home/src/shared/include" "$fms_home/src/shared/mpp/include"
+make -f Makefile
+
+cat <<EOF
+
+Compilation Done (fms)
+*****************************
+
+EOF
