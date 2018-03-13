@@ -44,7 +44,6 @@ module list
 
 model_type="dry"     # if "moist", the moist model is run and if "dry, it is the dry. "moist_hydro" is for the bucket hydrology model. The namelists for the parameters are below (L212).
 machine="psmn"       # machine = euler or brutus, use the alternate runscripts for fram, or change mkmf templates, submission commands, and modules for other machines
-platform="ifc"       # a unique identifier for your platform
 analysis_type="2d"   # choose type of analysis: 2d (zonally averaged) or 3d (zonally varying) outputs
 run_name="test_hs_${model_type}_${analysis_type}"  # label for run; output dir and working dir are run_name specific
 run_script="$PWD/run_dry_hs_psmn.sh"                      # path/name of this run script (for resubmit)
@@ -62,16 +61,6 @@ echo "num_segments = $num_segments"
 ###
 #   Information about MPI and CPUS; load machine-specific environment
 ###
-
-#source "run_$machine.sh"
-
-# Tell me which nodes it is run on; for sending messages to help-hpc
-#echo " "
-#echo This jobs runs on the following processors:
-#echo $LSB_HOSTS
-#echo " "
-
-#source /etc/profile.d/modules.sh
 
 echo "MPI Used:" $(which mpirun)
 
@@ -95,13 +84,7 @@ time_stamp="$fms_home/bin/time_stamp.csh"                         # generates st
 
 # Output dirs:
 # Set up work directory on scratch space (MACHINE-DEPENDENT)
-if [ "$machine" == "euler" ]; then
-   scratchdir="/cluster/work/beta2/clidyn/"        # (EULER) please change clidyn to a folder name of your choice (beta1-4 available)
-elif [ "$machine" == "brutus" ]; then
-   scratchdir="/cluster/scratch_xp/public/clidyn/" # (BRUTUS) please change clidyn to a folder name of your choice
-else
-   scratchdir="$(dirname $fms_home)"               # Fall-back: use the base fms-idealized directory
-fi
+scratchdir="$(dirname $fms_home)"               # Fall-back: use the base fms-idealized directory
 data_dir="${scratchdir}/fms_output/${exp_name}/${run_name}"
 tmpdir1="${scratchdir}/fms_tmp/${exp_name}"
 run_dir="$tmpdir1/$run_name"                   # tmp directory for current run
@@ -158,7 +141,7 @@ fi
 
 # compile mppnccombine.c, needed only if $npes > 1
 # mppnccombine compiles with all the gcc version in module files (4.9.4, 5.4.0, 6.4.0, 7.2.0) or with icc 17.0.4 but not with the default Debian gcc (6.3.0-18)
-$fms_home/bin/compile_mppnccombine "$fms_home" "$tmpdir1/mppnccombine.$platform"
+$fms_home/bin/compile_mppnccombine "$fms_home" "$tmpdir1/mppnccombine"
 
 $fms_home/bin/compile_fms "$exp_home" "$execdir"
 
