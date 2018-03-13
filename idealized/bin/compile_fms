@@ -12,11 +12,11 @@ function usage {
     cat <<EOF
 Compile model code, taking into account local source code modifications for an experiment.
 
-Usage: $ compile_experiment experiment_home mkmf_template_file execdir
+Usage: $ compile_fms experiment_home execdir [mkmf_template]
 
 experiment_home: experiment root directory, used for source code modifications and list of source paths (e.g. fms-idealized/exp/default_idealized)
-mkmf_template:   template file for your platform used by mkmf to generate the Makefile (e.g. mkmf.template.ifc_psmn_mpi)
 execdir:         directory where executable will be compiled (e.g. fms_tmp/default_idealized/exe.fms)
+mkmf_template:   optional template file for your platform used by mkmf to generate the Makefile (default mkmf_template)
 
 Note: before running this script, make sure that the compiler specified in the template file is available.
 This may require loading the appropriate module on a cluster.
@@ -27,7 +27,7 @@ EOF
 
 function abspath { echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"; }
 
-if [ $# -ne 3 ]; then
+if [ $# -lt 2 ]; then
     usage
     exit
 fi
@@ -35,8 +35,8 @@ fi
 
 exp_home="$(abspath $1)"                               # experiment root directory, used for source code modifications and list of source paths
 fms_home="$(dirname "$(dirname $exp_home)")/idealized" # directory containing model source code, etc, usually /home/$USER/fms/idealized
-template="$fms_home/bin/$2"                            # path to template for your platform
-execdir="$3"                                           # directory where executable will be compiled
+execdir="$2"                                           # directory where executable will be compiled
+template="$fms_home/bin/${3:-mkmf_template}"           # path to template for your platform (default mkmf_template)
 pathnames="$exp_home/input/path_names"                 # path to file containing list of source paths
 
 cat <<EOF

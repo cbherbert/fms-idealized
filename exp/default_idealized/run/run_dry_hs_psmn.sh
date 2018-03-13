@@ -160,7 +160,7 @@ fi
 # mppnccombine compiles with all the gcc version in module files (4.9.4, 5.4.0, 6.4.0, 7.2.0) or with icc 17.0.4 but not with the default Debian gcc (6.3.0-18)
 $fms_home/bin/compile_mppnccombine "$fms_home" "$tmpdir1/mppnccombine.$platform"
 
-$fms_home/bin/compile_fms "$exp_home" "mkmf.template.${platform}_${machine}_mpi" "$execdir"
+$fms_home/bin/compile_fms "$exp_home" "$execdir"
 
 
 cd "$workdir/INPUT"

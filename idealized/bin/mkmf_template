@@ -1,0 +1,29 @@
+# -*-mode: makefile-*-
+# template for generating the Makefile with correct compiler settings
+# typical use with mkmf
+# mkmf -t template.ifc -c "-Duse_libMPI -Duse_netCDF" path_names /usr/local/include
+# Note that compile.fms appends definition of fms_home to end of template.
+
+# On a cluster, the wrappers should be defined automatically by loading the right module
+# For manual choice, add the correct paths below and define the MPI variable before calling mkmf
+MPI ?= AUTO
+COMPILER ?= INTEL
+FC = $(FC_$(MPI))
+LD = $(LD_$(MPI))
+CC = $(CC_$(MPI))
+FC_AUTO = mpifort
+LD_AUTO = mpifort
+CC_AUTO = mpicc
+FFLAGS =  -I$(fms_home)/bin/nc_inc -O2 $(FFLAGS_$(COMPILER))
+LDFLAGS = -L$(fms_home)/bin/nc_lib -lnetcdf
+CFLAGS = -I$(fms_home)/bin/nc_inc $(CFLAGS_$(COMPILER))
+
+FFLAGS_INTEL = -convert big_endian -safe_cray_ptr -ftz -i4 -r8 -fpp -D__IFC
+CFLAGS_INTEL = -D__IFC
+FFLAGS_GNU   = -cpp -fcray-pointer -fdefault-real-8
+CFLAGS_GNU   =
+
+# This is an outdated version of OpenMPI used for tests only:
+FC_OPEN165 = $(HOME)/openmpi-1.6.5/bin/mpif90
+LD_OPEN165 = $(HOME)/openmpi-1.6.5/bin/mpif90
+CC_OPEN165 = $(HOME)/openmpi-1.6.5/bin/mpicc
