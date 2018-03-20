@@ -79,6 +79,7 @@ exp_name="$(basename "$exp_home")"                                # name of expe
 fms_home="$(dirname "$(dirname $exp_home)")/idealized"            # directory containing model source code, etc, usually /home/$USER/fms/idealized
 namelist="$exp_home/input/namelists_${model_type}"                # path to namelist file
 fieldtable="$exp_home/input/field_table_${model_type}"            # path to field table (specifies tracers)
+diagtable="$exp_home/input/diag_table_${model_type}_${analysis_type}"       # path to diagnostics table
 time_stamp="$fms_home/bin/time_stamp.csh"                         # generates string date for file name labels
 
 
@@ -94,41 +95,38 @@ execdir="$tmpdir1/exe.fms"                     # where code is compiled and exec
 run_analysis="$run_dir/analysis"               # where analysis is run
 
 # zonally averaged analysis
-analysis_version="analysis_${analysis_type}"
 analysis_script="run_analysis_${model_type}_${analysis_type}_${machine}.sh"
-diagtable="$exp_home/input/diag_table_${model_type}_${analysis_type}"     # path to diagnostics table
-analysis_dir="$(dirname $fms_home)/analysis/$analysis_version/run"                 # location of analysis directory
+analysis_dir="$(dirname $fms_home)/analysis/analysis_${analysis_type}/run"  # location of analysis directory
 
 #--------------------------------------------------------------------------------------------------------
-
 #limit stacksize unlimited
+#--------------------------------------------------------------------------------------------------------
 
-cd $exp_home
+###
+#   Compile the model code
+###
 
-# note the following init_cond's are overwritten later if reload_commands exists
+# compile mppnccombine.c, needed only if $npes > 1
+# mppnccombine compiles with all the gcc version in module files (4.9.4, 5.4.0, 6.4.0, 7.2.0) or with icc 17.0.4 but not with the default Debian gcc (6.3.0-18)
+$fms_home/bin/compile_mppnccombine "$fms_home" "$tmpdir1/mppnccombine"
+
+$fms_home/bin/compile_fms "$exp_home" "$execdir"
+
+###
+#   Prepare the run (input files, etc)
+###
+
+# Define initial condition and counters for the main loop
 init_cond=""
-
 ireload=1         # counter for resubmitting this run script
 irun=1            # counter for multiple model submissions within this script
-#--------------------------------------------------------------------------------------------------------
-
-###
-#   Preparing the run (compile code, etc)
-###
-
 # if exists, load reload file
 reload_file="${run_dir}/reload_commands"
-if [ -d "$run_dir" ]; then
-  if [ -f "$reload_file" ]; then
-     # set irun, ireload, init_cond
-     source "$reload_file"
-  fi
-fi
+[ -f "$reload_file" ] && source "$reload_file" # set irun, ireload, init_cond
 
-# otherwise, prepare for a new run
 
-# creating directory structure
-mkdir -p "$execdir" "$run_analysis"
+# Create directory structure
+mkdir -p "$run_analysis"
 mkdir -p "$output_dir"/{combine,logfiles,restart}
 if [ ! -e "$workdir" ]; then
     mkdir -p "$workdir"/{INPUT,RESTART} && echo "Directory $workdir created with subdirectories INPUT and RESTART."
@@ -138,35 +136,22 @@ else
     echo "WARNING: Existing workdir $workdir removed and replaced with empty one, with subdirectories INPUT and RESTART."
 fi
 
-
-# compile mppnccombine.c, needed only if $npes > 1
-# mppnccombine compiles with all the gcc version in module files (4.9.4, 5.4.0, 6.4.0, 7.2.0) or with icc 17.0.4 but not with the default Debian gcc (6.3.0-18)
-$fms_home/bin/compile_mppnccombine "$fms_home" "$tmpdir1/mppnccombine"
-
-$fms_home/bin/compile_fms "$exp_home" "$execdir"
-
-
 cd "$workdir/INPUT"
 
-#--------------------------------------------------------------------------------------------------------
-
-# set initial conditions and move to executable directory
-
+# Set initial conditions
 if [ "$init_cond" != "" ]; then
   cp "$init_cond" "$(basename $init_cond)"
   cpio -iv  < "$(basename $init_cond)"
 #  rm -f $init_cond:t
 fi
 
-# if ocean_mask exists, move it to workdir/INPUT folder O.A. May 2014
+# If ocean_mask exists, move it to workdir/INPUT folder O.A. May 2014
 ocean_mask="ocean_mask_T42.nc" # name of ocean mask file, will only be used if load_mask = .true. in atmosphere_nml
 if [ -e "$exp_home/input/${ocean_mask}" ]; then
    cp "$exp_home/input/${ocean_mask}" "ocean_mask.nc"
    cd "$output_dir"
    cp "$exp_home/input/${ocean_mask}" "ocean_mask.nc"
 fi
-
-#--------------------------------------------------------------------------------------------------------
 
 ###
 #   The actual model run starts here
