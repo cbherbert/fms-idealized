@@ -109,6 +109,7 @@ echo "namelist=$namelist" >> post_processing_info
 echo "diagtable=$diagtable" >> post_processing_info
 echo "fieldtable=$fieldtable" >> post_processing_info
 echo "runs_per_script=$runs_per_script" >> post_processing_info
+echo "num_script_runs=$num_script_runs" >> post_processing_info
 echo "days=$days" >> post_processing_info
 echo "init_cond=" >> post_processing_info
 echo "time_stamp=$fms_home/bin/time_stamp.csh" >> post_processing_info
