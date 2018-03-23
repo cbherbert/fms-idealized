@@ -38,6 +38,7 @@ Compiling mppnccombine utility...
 EOF
 
 if [ ! -f "$target" ]; then
+    mkdir -p "$(dirname "$target")"
     ${CC:-gcc} -O -o "$target" -I"$fms_home/bin/nc_inc" -L"$fms_home/bin/nc_lib" "$fms_home/postprocessing/mppnccombine.c" -lnetcdf
 fi
 
