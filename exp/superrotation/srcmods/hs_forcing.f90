@@ -318,11 +318,7 @@ contains
 
    do k=1,size(tdt,3)
       ! clip pressure to ensure the forcing vanishes outside the imposed pressure bounds
-      do i=1,size(tdt,1)
-         do j=1,size(tdt,2)
-            press(i,j) = min(max(p_full(i,j,k),ptatf),pbatf)
-         enddo
-      enddo
+      press(:,:) = min(max(p_full(:,:,k),ptatf),pbatf)
       ! compute vertical factor
       qvertfact(:,:) = sin(pi*(press(:,:)-ptatf)/(pbatf-ptatf))
       ! compute total heating term (convert q0atf to K/s)
