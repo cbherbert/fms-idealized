@@ -63,7 +63,7 @@ private
    real :: trdamp
 
    integer :: id_teq, id_tdt, id_udt, id_vdt,  &
-              id_tdt_diss, id_diss_heat
+              id_tdt_diss, id_diss_heat, id_qatf
    real    :: missing_value = -1.e10
    character(len=10) :: mod_name = 'hs_forcing'
 
@@ -158,6 +158,8 @@ contains
       call equatorial_forcing ( lat, lon, p_full, ttnd) ! adding the non-zonal heating term
 
       tdt = tdt + ttnd
+
+      if (id_qatf > 0) used = send_data ( id_qatf, ttnd, Time, is, js)
 
 
 !-----------------------------------------------------------------------
@@ -265,6 +267,10 @@ contains
          id_diss_heat = register_diag_field ( mod_name, 'diss_heat_rdamp', axes(1:2), &
                    Time, 'Integrated dissipative heating for Rayleigh damping', 'W/m2')
       endif
+
+      id_qatf = register_diag_field ( mod_name, 'q_eqf', axes(1:3), Time, &
+                      'equatorial forcing', 'deg_K/sec' ,    &
+                       missing_value=missing_value     )
 
       do_init  = .false.
 
