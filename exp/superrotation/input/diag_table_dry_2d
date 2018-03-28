@@ -9,16 +9,17 @@
  "dynamics",        "ps",                      "ps",                 "4xday",       "all", .false., "none", 2,
  "dynamics",        "bk",                      "bk",                 "4xday",       "all", .false., "none", 2,
  "dynamics",        "pk",                      "pk",                 "4xday",       "all", .false., "none", 2,
- "dynamics",        "vor",         	       "vor",	             "4xday",       "all", .false., "none", 2, 
+ "dynamics",        "vor",         	       "vor",	             "4xday",       "all", .false., "none", 2,
  "dynamics",        "div",                     "div",                "4xday",       "all", .false., "none", 2,
  "dynamics",        "ucomp",                   "ucomp",              "4xday",       "all", .false., "none", 2,
- "dynamics",        "vcomp",                   "vcomp",              "4xday",       "all", .false., "none", 2,	
+ "dynamics",        "vcomp",                   "vcomp",              "4xday",       "all", .false., "none", 2,
  "dynamics",        "temp",                    "temp",               "4xday",       "all", .false., "none", 2,
- "grid_physics",    "teq",                     "teq",                "4xday",       "all", .false., "none", 2,
- "grid_physics",    "tdt_total_grid_physics",  "dt_tg_radiation",    "4xday",       "all", .false., "none", 2,
+ "hs_forcing",      "teq",                     "teq",                "4xday",       "all", .false., "none", 2,
+ "hs_forcing",      "tdt_ndamp",  	       "dt_tg_radiation",    "4xday",       "all", .false., "none", 2,
+ "hs_forcing",      "q_eqf",  	       	       "dt_tg_forcing",      "4xday",       "all", .false., "none", 2,
  "dry_convection",  "dt_tg",                   "dt_tg_convection",   "4xday",       "all", .false., "none", 2,
  "atmosphere",      "dt_tg_diffusion",         "dt_tg_diffusion",    "4xday",       "all", .false., "none", 2,
- 
+
 #=============================================================================================
 #
 #  FORMATS FOR FILE ENTRIES (not all input values are used)
