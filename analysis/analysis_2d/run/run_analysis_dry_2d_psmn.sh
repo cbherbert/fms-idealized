@@ -215,7 +215,7 @@ if [ $successful_analysis -eq 1 ]; then
   mkdir -p ${data_dir}/surface
 
   mv -f $output_dir/${date_name}*.nc  ${data_dir}/history/
-  mv -f $input_dir/${date_name}.${fms_output_freq}.nc ${data_dir}/surface/
+  mv -f $input_dir/${date_name}.${fms_surface_freq}.nc ${data_dir}/surface/
   \cp -f $run_dir/output/logfiles/${date_name}.* ${data_dir}/logfiles/
 
   # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
@@ -252,8 +252,8 @@ while [ $isegment -le $num_segments ]; do
 done
 
 # check surface output (make sure file exists - size depends on number of times)
-cd ${data_dir}/surface
-if [ ! -e ${date_name}.${fms_output_freq}.nc ]; then successful_data=0; fi
+#cd ${data_dir}/surface
+#if [ ! -e ${date_name}.${fms_surface_freq}.nc ]; then successful_data=0; fi
 
 # if these tests passed, remove uncombined model output
 if [ ${successful_data} -eq 1 ]; then

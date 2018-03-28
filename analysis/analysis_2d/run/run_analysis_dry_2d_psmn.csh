@@ -213,7 +213,7 @@ if ( $successful_analysis == 1 ) then
   mkdir -p ${data_dir}/surface
 
   mv -f $output_dir/${date_name}*.nc  ${data_dir}/history/
-  mv -f $input_dir/${date_name}.${fms_output_freq}.nc ${data_dir}/surface/
+  mv -f $input_dir/${date_name}.${fms_surface_freq}.nc ${data_dir}/surface/
   \cp -f $uncombined_dir:h:h/logfiles/${date_name}.* ${data_dir}/logfiles/
 
   # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
