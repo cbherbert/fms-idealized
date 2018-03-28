@@ -1,17 +1,28 @@
 # -*-mode: shell-script -*-
 
-# required input:
-exp_home="$1"
-run_dir="$2"
 
-if [ ! -f "${exp_home}/run/post_processing_info" ]; then
-    echo "Error: Run parameter file ${exp_home}/run/post_processing_info does not exist. Exiting"
-    exit 1
-fi
-if [ "$run_dir" == "" ]; then
-    echo "Error: empty run directory. You probably forgot to pass it to the run_loop script. Exiting"
-    exit 1
-fi
+function do_run {
+    # required input:
+    local exp_home="$1"
+    local run_dir="$2"
+
+    if [ ! -f "${exp_home}/run/post_processing_info" ]; then
+	echo "Error: Run parameter file ${exp_home}/run/post_processing_info does not exist. Exiting"
+	exit 1
+    fi
+    if [ "$run_dir" == "" ]; then
+	echo "Error: empty run directory. You probably forgot to pass it to the run_loop script. Exiting"
+	exit 1
+    fi
+
+    copy_parameters "$run_dir" "$exp_home/run/post_processing_info" "$exp_home/run/run_nml"
+    prepare_rundir "$exp_home" "$run_dir"
+    main_loop "$run_dir"
+    #rm -rf "${run_dir}/workdir"
+    resubmit_script "$exp_home" "$ireload" "$num_script_runs"
+    date
+}
+
 
 ###
 #   Prepare the run (input files, etc)
@@ -37,7 +48,6 @@ function prepare_rundir {
     fi
 
     # Get run parameters
-    cp "$exp_home/run/post_processing_info" "${run_dir}/post_processing_info"
     source "${run_dir}/post_processing_info" # needed for $diagtable, $fieldtable, $namelist and $tmpdir1
 
     # Copy input files
@@ -53,7 +63,6 @@ function prepare_rundir {
     cp "${tmpdir1}/exe.fms/fms.x" "${workdir}/fms.x"
 
     # combine experience namelists template and local run modifications
-    [ -e "$exp_home/run/run_nml" ] && cat "$exp_home/run/run_nml" > "${run_dir}/input.nml"
     cat "$namelist" >> "${run_dir}/input.nml"
 
     echo "run_analysis=$run_analysis" >> "${run_dir}/post_processing_info"
@@ -62,9 +71,14 @@ function prepare_rundir {
 
 }
 
-prepare_rundir "$exp_home" "$run_dir"
-
-
+function copy_parameters {
+    local run_dir="$1"
+    local run_par="$2" # technical run parameters (for the run and analysis scripts)
+    local run_nml="$3" # physical run parameters (input namelist passed ot the code)
+    mkdir -p "$run_dir"
+    cp "$run_par" "${run_dir}/post_processing_info"
+    [ -e "$run_nml" ] && cat "$run_nml" > "${run_dir}/input.nml"
+}
 
 ###
 #   The actual model run starts here
@@ -247,8 +261,6 @@ EOF
     done # --- loop over $irun ended ---
 }
 
-main_loop "$run_dir"
-
 
 function resubmit_script {
     local exp_home="$1"
@@ -263,10 +275,3 @@ function resubmit_script {
 	ssh psmnsb "source ~/.profile; qsub $run_script"
     fi
 }
-
-#rm -rf "${run_dir}/workdir"
-
-resubmit_script "$exp_home" "$ireload" "$num_script_runs"
-
-
-date

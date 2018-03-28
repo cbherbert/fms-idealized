@@ -130,4 +130,5 @@ echo "isegment=1" >> post_processing_info
 #   Run the model
 ###
 
-source run_loop.sh "$exp_home" "${scratchdir}/fms_tmp/${exp_name}/${run_name}"
+source run_loop.sh
+do_run "$exp_home" "${scratchdir}/fms_tmp/${exp_name}/${run_name}"
