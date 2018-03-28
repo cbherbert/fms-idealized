@@ -152,12 +152,13 @@ contains
 
       tdt = tdt + ttnd
 
+      if (id_tdt > 0) used = send_data ( id_tdt, ttnd, Time, is, js)
+      if (id_teq > 0) used = send_data ( id_teq, teq,  Time, is, js)
+
       call equatorial_forcing ( lat, lon, p_full, ttnd) ! adding the non-zonal heating term
 
       tdt = tdt + ttnd
 
-      if (id_tdt > 0) used = send_data ( id_tdt, ttnd, Time, is, js)
-      if (id_teq > 0) used = send_data ( id_teq, teq,  Time, is, js)
 
 !-----------------------------------------------------------------------
 !     -------- tracers -------
@@ -307,7 +308,7 @@ contains
    qlonfact(:,:) = cos(katf*lon(:,:))
    ! compute latitude factor (lacking phi0atf)
    dphi_rad = dphiatf*pi/180.
-   qlatfact(:,:) = exp(-lat(:,:)*lat(:,:)/(dphi_rad**dphi_rad))
+   qlatfact(:,:) = exp(-lat(:,:)*lat(:,:)/(dphi_rad**2))
 
    do k=1,size(tdt,3)
       ! clip pressure to ensure the forcing vanishes outside the imposed pressure bounds
