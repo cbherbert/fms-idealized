@@ -70,7 +70,7 @@ exe_dir="$run_analysis/exe.analysis"                 # executable directory
 executable="analysis"                                   # executable name
 mppnccombine="${tmpdir1}/mppnccombine" # path to the combine executable
 include_dir="$fms_home/bin/nc_inc"
-template="$analysis_dir/input/mkmf.template.ifc_psmn" # machine-specific compilation templates for your platform
+template="$analysis_dir/input/mkmf.template.ifc" # machine-specific compilation templates for your platform
 diag_table="$analysis_dir/input/diag_table.dt"
 pathnames="$analysis_dir/input/path_list"              # file containing list of code
 

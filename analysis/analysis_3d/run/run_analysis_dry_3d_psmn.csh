@@ -72,7 +72,7 @@ set exe_dir        = $run_analysis/exe.analysis                 # executable dir
 set executable     = analysis                                   # executable name
 set mppnccombine   = ${tmpdir1}/mppnccombine.ifc # path to the combine executable
 set include_dir    = $fms_home/bin/nc_inc
-set template       = $analysis_dir/input/mkmf.template.ifc_psmn # machine-specific compilation templates for your platform
+set template       = $analysis_dir/input/mkmf.template.ifc # machine-specific compilation templates for your platform
 set diag_table     = $analysis_dir/input/diag_table.dt
 set pathnames      = $analysis_dir/input/path_list              # file containing list of code
 
@@ -267,4 +267,3 @@ endif
 rm $run_analysis/$date_name/$executable
 rm $run_analysis/$date_name/diag_table
 rm $run_analysis/$date_name/input.nml
-
