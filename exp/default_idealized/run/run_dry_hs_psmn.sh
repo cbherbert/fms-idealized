@@ -131,4 +131,4 @@ echo "isegment=1" >> post_processing_info
 ###
 
 source run_loop.sh
-do_run "$exp_home" "${scratchdir}/fms_tmp/${exp_name}/${run_name}"
+do_run "$exp_home" "${scratchdir}/fms_tmp/${exp_name}/${run_name}" "${run_script}"

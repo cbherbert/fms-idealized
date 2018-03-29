@@ -5,6 +5,7 @@ function do_run {
     # required input:
     local exp_home="$1"
     local run_dir="$2"
+    local run_script="$3"
 
     if [ ! -f "${exp_home}/run/post_processing_info" ]; then
 	echo "Error: Run parameter file ${exp_home}/run/post_processing_info does not exist. Exiting"
@@ -19,7 +20,7 @@ function do_run {
     prepare_rundir "$exp_home" "$run_dir"
     main_loop "$run_dir"
     #rm -rf "${run_dir}/workdir"
-    resubmit_script "$exp_home" "$ireload" "$num_script_runs"
+    resubmit_script "$exp_home" "$ireload" "$num_script_runs" "$run_script"
     date
 }
 
@@ -266,6 +267,7 @@ function resubmit_script {
     local exp_home="$1"
     local ireload="$2"
     local num_script_runs="$3"
+    local run_script="$4"
 
     cd "$exp_home/run"
     if [ "$ireload" -gt "$num_script_runs" ]; then
