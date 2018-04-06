@@ -24,11 +24,8 @@
 # Corentin Herbert, May 2016
 
 
-source /usr/share/modules/init/csh
-module unload openmpi
-module use /applis/PSMN/Modules
-module load Base/psmn
-module load openmpi/1.6.4-intel-14.0.1
+source /usr/share/lmod/lmod/init/tcsh
+module load IntelComp/2017.4
 module list
 
 
@@ -62,7 +59,7 @@ echo "$times_per_segment instants per segment, frequency $fms_output_freq."
 # directories
 set analysis_dir   = $fms_home:h/analysis/analysis_3d           # directory with analysis code
 set run_dir        = ${tmpdir1}/${run_name}                  # tmp directory for current run
-set scratch_dir    = $TMPDIR/${exp_name}/${run_name}     # scratch directory on specific compute node (faster read/write)
+set scratch_dir    = ${run_dir}     # scratch directory on specific compute node (faster read/write)
 set uncombined_dir = ${tmpdir1}/${run_name}/output/combine/${date_name} # directory with uncombined input data
 set input_dir      = ${scratch_dir}/combine                     # directory where combined netcdf files are written
 set output_dir     = ${scratch_dir}/history                     # directory where output is written
@@ -86,7 +83,7 @@ echo "*** Running ${analysis_dir}/run_analysis_dry_3d for ${date_name} of ${run_
 mkdir -p ${input_dir}
 cd ${scratch_dir}
 foreach ncfile (`/bin/ls $uncombined_dir/${date_name}.*.nc.0000`)
-  cp $ncfile:r.???? ${scratch_dir}
+  \cp $ncfile:r.???? ${scratch_dir}
   set ncfile_tail = $ncfile:t
   rm -f $ncfile_tail:r
   $mppnccombine $ncfile_tail:r
@@ -113,8 +110,8 @@ echo "fms_home =  $fms_home" > $exe_dir/tmp_template
 /bin/cat $template >> $exe_dir/tmp_template
 mkmf -a $src_dir -c"-Daix" -t $exe_dir/tmp_template -p $executable $pathnames $include_dir
 make $executable
-cp $executable $run_analysis/$date_name
-cp $diag_table $run_analysis/$date_name/diag_table
+\cp $executable $run_analysis/$date_name
+\cp $diag_table $run_analysis/$date_name/diag_table
 
 cd $run_analysis/$date_name
 # Loop over analysis segments and run analysis on each one
@@ -195,7 +192,7 @@ EOF
   echo $main_list  | tr \$ "\n" >>  $run_analysis/$date_name/input.nml
 
   ./$executable
-  set analysis_return_value = $?
+  set analysis_return_value = $status
   echo 'Return value of analysis' $analysis_return_value
   if ( $analysis_return_value != 0 ) set successful_analysis = 0
 
@@ -206,6 +203,7 @@ end # loop over $isegment ended
 if ( $successful_analysis == 1 ) then
 
   #### STEP 3: Move model output (analysis and surface) to data_dir ####
+  # i.e. outside of the temporary directories, to the fms_output tree
 
   # copy model history and logfiles to ${data_dir}
   mkdir -p ${data_dir}/history
@@ -214,10 +212,7 @@ if ( $successful_analysis == 1 ) then
 
   mv -f $output_dir/${date_name}*.nc  ${data_dir}/history/
   mv -f $input_dir/${date_name}.${fms_surface_freq}.nc ${data_dir}/surface/
-  mv -f $uncombined_dir:h:h/logfiles/${date_name}.* ${data_dir}/logfiles/
-#  mv -f $output_dir/logfiles/$date_name.* ${data_dir}/logfiles/
-
-
+  \cp -f $uncombined_dir:h:h/logfiles/${date_name}.* ${data_dir}/logfiles/
 
   # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
   cd $fms_home:h/exp/${exp_name}/
