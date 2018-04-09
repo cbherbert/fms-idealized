@@ -218,8 +218,8 @@ if [ $successful_analysis -eq 1 ]; then
   mv -f $input_dir/${date_name}.${fms_surface_freq}.nc ${data_dir}/surface/
   \cp -f $run_dir/output/logfiles/${date_name}.* ${data_dir}/logfiles/
 
-  # copy run script and srcmods to a tar file in output (overwrite this file with each submission of this run)
-  tar czvf ${data_dir}/scripts.tgz ${run_script} "$(dirname "$fms_home")/exp/${exp_name}/srcmods"
+  # copy run script and srcmods to a tar file in output dir
+  [ -e "${data_dir}/scripts.tgz" ] || tar czvf "${data_dir}/scripts.tgz" -C "$(dirname ${run_script})" "$(basename ${run_script})" -C "$(dirname "$fms_home")/exp/${exp_name}" "srcmods"
 
 fi
 
