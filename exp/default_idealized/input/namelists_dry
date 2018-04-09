@@ -39,7 +39,7 @@
     initial_temperature  = 280.0 /
 
  &diag_manager_nml
-    mix_snapshot_average_fields = .true. /
+    mix_snapshot_average_fields = .false. /
 
  &radiation_nml
     albedo_value                 = 0.38,
