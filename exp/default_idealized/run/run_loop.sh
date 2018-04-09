@@ -172,8 +172,8 @@ EOF
     	    if [ ! -d "$(dirname $restart_file)" ]; then mkdir -p "$(dirname $restart_file)"; fi
     	    #     --- also save namelist and diag_table ---
     	    cp $workdir/{*.nml,diag_table} .
-    	    local files=($resfiles input.nml diag_table)
-    	    /bin/ls $files | cpio -ocv > "$(basename $restart_file)"
+    	    local files=(${resfiles[@]} input.nml diag_table)
+    	    /bin/ls ${files[@]} | cpio -ocv > "$(basename $restart_file)"
     	    mv "$(basename $restart_file)" "$restart_file"
     	    #     --- set up restart for next run ---
     	    if [ $irun -lt $runs_per_script ]; then
