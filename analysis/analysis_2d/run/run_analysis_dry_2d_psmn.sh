@@ -58,62 +58,74 @@ echo "$times_per_segment instants per segment, frequency $fms_output_freq."
 
 # directories
 analysis_dir="$(dirname "$fms_home")/analysis/analysis_2d"           # directory with analysis code
-run_dir="${tmpdir1}/${run_name}"                  # tmp directory for current run
-#set scratch_dir    = $TMPDIR/${exp_name}/${run_name}     # scratch directory on specific compute node (faster read/write)
-scratch_dir="$(dirname "$fms_home")/fms_tmp/${exp_name}/${run_name}"
-uncombined_dir="${tmpdir1}/${run_name}/output/combine/${date_name}" # directory with uncombined input data
-input_dir="${scratch_dir}/combine"                     # directory where combined netcdf files are written
-output_dir="${scratch_dir}/history"                     # directory where output is written
-
-src_dir="$analysis_dir/src"                          # prefix for path_names
-exe_dir="$run_analysis/exe.analysis"                 # executable directory
-executable="analysis"                                   # executable name
-mppnccombine="${tmpdir1}/mppnccombine" # path to the combine executable
-include_dir="$fms_home/bin/nc_inc"
-template="$analysis_dir/input/mkmf.template.ifc" # machine-specific compilation templates for your platform
 diag_table="$analysis_dir/input/diag_table.dt"
-pathnames="$analysis_dir/input/path_list"              # file containing list of code
+run_dir="${tmpdir1}/${run_name}"                  # tmp directory for current run (scratch directory on specific compute node (faster read/write))
+uncombined_dir="${run_dir}/output/combine/${date_name}" # directory with uncombined input data
+input_dir="${run_dir}/combine"                     # directory where combined netcdf files are written
+output_dir="${run_dir}/history"                     # directory where output is written
+mppnccombine="${tmpdir1}/mppnccombine" # path to the combine executable
 
-mkmf="$fms_home/bin/mkmf"                         # produces makefile
 
 echo "*** Running ${analysis_dir}/run_analysis_dry_2d for ${date_name} of ${run_name} on $HOSTNAME ***"
 
 #### STEP 1: Combine the data files ####
 # This takes all the nc files in output/combine/$date_name/ and creates a combined nc file in combine/
 
-mkdir -p ${input_dir}
-cd ${scratch_dir}
-for ncfile in $uncombined_dir/${date_name}.*.nc.0000; do
-  \cp ${ncfile%.*}.* ${scratch_dir}
-  ncfile_tail=${ncfile##*/}
-  rm -f ${ncfile_tail%.*}
-  $mppnccombine ${ncfile_tail%.*}
-  if [ $? -eq 0 ]; then
-     mv -f ${ncfile_tail%.*} ${input_dir}
-     echo "${ncfile%.*} combined in ${scratch_dir} on $HOSTNAME"
-  fi
-  rm -f ${ncfile_tail%.*}.*
-done
+function combine_output {
+    local mppnccombine="$1"
+    local run_dir="$2"
+    local date_name="$3"
+    local uncombined_dir="${run_dir}/output/combine/${date_name}" # directory with uncombined input data
+    local input_dir="${run_dir}/combine"                          # directory where combined netcdf files are written
 
-#### STEP 2: Run the analysis ####
+    mkdir -p ${input_dir}
+    cd ${run_dir}
+    for ncfile in $uncombined_dir/${date_name}.*.nc.0000; do # e.g. ncfile="$run_dir/output/combine/day1000h00.4xday.nc.0000"
+	\cp ${ncfile%.*}.* ${run_dir} # cp $run_dir/output/combine/day1000h00.4xday.nc.* $run_dir
+	local ncfile_tail=${ncfile##*/} # i.e. basename $ncfile
+	rm -f ${ncfile_tail%.*}
+	$mppnccombine ${ncfile_tail%.*} # combine into day1000h00.4xday.nc
+	if [ $? -eq 0 ]; then
+	    mv -f ${ncfile_tail%.*} ${input_dir}
+	    echo "${ncfile%.*} combined in ${input_dir} on $HOSTNAME"
+	fi
+	rm -f ${ncfile_tail%.*}.*
+    done
+}
+
+combine_output "$mppnccombine" "$run_dir" "$date_name"
+
+#### STEP 2: Build analysis code ####
 # This creates the analysis executable and copies it to the date_name directory, and also the diag_table file.
-# Then the loop creates the input.nml file and the analysis code creates the nc file in history/
+
+function compile_analysis {
+    local fms_home="$1"
+    local target="$2"
+    local analysis_dir="$(dirname "$fms_home")/analysis/analysis_2d"           # directory with analysis code
+    local template="$analysis_dir/input/${3:-mkmf.template.ifc}" # machine-specific compilation templates for your platform
+    local exe_dir="$(dirname $target)"                 # executable directory
+    local executable="$(basename $target)"                                   # executable name
+    local src_dir="$analysis_dir/src"                          # prefix for path_names
+    local pathnames="$analysis_dir/input/path_list"              # file containing list of code
+    mkdir -p "$exe_dir"
+    cd "$exe_dir"
+    # append fms_home (containing netcdf libraries and include files) to template
+    echo "fms_home =  $fms_home" > "$exe_dir/tmp_template"
+    /bin/cat "$template" >> "$exe_dir/tmp_template"
+    $fms_home/bin/mkmf -a "$src_dir" -c"-Daix" -t "$exe_dir/tmp_template" -p "$executable" "$pathnames" "$fms_home/bin/nc_inc"
+    make "$executable"
+}
+compile_analysis "$fms_home" "$run_analysis/exe.analysis/analysis"
+
+\cp "$run_analysis/exe.analysis/analysis" "$run_analysis/$date_name"
+\cp "$diag_table" "$run_analysis/$date_name/diag_table"
+
+
+#### STEP 3: Run the analysis ####
+# The loop creates the input.nml file and the analysis code creates the nc file in history/
 
 successful_analysis=1 # this gets set to 0 if an indicator suggests any instance of analysis failed.
-
-
-# Build analysis code
-mkdir -p $exe_dir
 mkdir -p $output_dir
-cd $exe_dir
-# create make file
-# append fms_home (containing netcdf libraries and include files) to template
-echo "fms_home =  $fms_home" > $exe_dir/tmp_template
-/bin/cat $template >> $exe_dir/tmp_template
-$mkmf -a $src_dir -c"-Daix" -t $exe_dir/tmp_template -p $executable $pathnames $include_dir
-make $executable
-\cp $executable $run_analysis/$date_name
-\cp $diag_table $run_analysis/$date_name/diag_table
 
 cd $run_analysis/$date_name
 # Loop over analysis segments and run analysis on each one
@@ -195,7 +207,7 @@ EOF
 
   echo $main_list  | tr \$ "\n" >>  $run_analysis/$date_name/input.nml
 
-  ./$executable
+  ./analysis
   analysis_return_value=$?
   echo "Return value of analysis: $analysis_return_value"
   if [ $analysis_return_value -ne 0 ]; then successful_analysis=0; fi
@@ -263,6 +275,6 @@ if [ ${successful_data} -eq 1 ]; then
 fi
 
 # clean up
-rm $run_analysis/$date_name/$executable
+rm $run_analysis/$date_name/analysis
 rm $run_analysis/$date_name/diag_table
 rm $run_analysis/$date_name/input.nml
